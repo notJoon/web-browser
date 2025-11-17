@@ -35,8 +35,20 @@ class URL:
             ctx = ssl.create_default_context()
             s = ctx.wrap_socket(s, server_hostname=self.host)
 
-        request = "GET {} HTTP/1.0\r\n".format(self.path)
-        request += "Host: {}\r\n".format(self.host)
+        # HTTP/1.1 요청 생성
+        request = "GET {} HTTP/1.1\r\n".format(self.path)
+        
+        # 헤더를 딕셔너리로 관리하여 쉽게 추가 가능
+        headers = {
+            "Host": self.host,
+            "Connection": "close",
+            "User-Agent": "SimpleWebBrowser/1.0"
+        }
+        
+        # 헤더 추가
+        for header, value in headers.items():
+            request += "{}: {}\r\n".format(header, value)
+        
         request += "\r\n"
         s.send(request.encode("utf-8"))
 
