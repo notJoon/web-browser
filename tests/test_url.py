@@ -32,6 +32,12 @@ class TestURL:
         assert url.scheme == "file"
         assert url.path == "/Users/test/document.html"
 
+    def test_data_scheme_parsing(self):
+        """Data 스킴 URL 파싱 테스트"""
+        url = URL("data:text/html,hello world!")
+        assert url.scheme == "data"
+        assert url.data == "text/html,hello world!"
+
     def test_port_parsing(self):
         """포트 번호가 명시된 URL 파싱 테스트"""
         url = URL("http://example.com:8080/api")
@@ -72,6 +78,33 @@ class TestHTTPRequest:
         assert "Host: example.com\r\n" in sent_data
         assert "Connection: close\r\n" in sent_data
         assert "User-Agent: SimpleWebBrowser/1.0\r\n" in sent_data
+
+
+class TestDataRequest:
+    def test_data_request_simple(self):
+        """단순 data URL 테스트"""
+        url = URL("data:text/html,hello world!")
+        content = url.request()
+        assert content == "hello world!"
+
+    def test_data_request_html(self):
+        """HTML을 포함한 data URL 테스트"""
+        url = URL("data:text/html,<h1>Test</h1>")
+        content = url.request()
+        assert content == "<h1>Test</h1>"
+
+    def test_data_request_encoded(self):
+        """URL 인코딩된 data URL 테스트"""
+        # 공백이 %20으로 인코딩된 경우
+        url = URL("data:text/html,hello%20world%21")
+        content = url.request()
+        assert content == "hello world!"
+
+    def test_data_request_no_comma(self):
+        """콤마가 없는 data URL 테스트"""
+        url = URL("data:plain_text_content")
+        content = url.request()
+        assert content == "plain_text_content"
 
 
 class TestFileRequest:

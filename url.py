@@ -1,17 +1,26 @@
 import socket
 import ssl
+import urllib.parse
 
 CLRF = "\r\n"
 
 
 class URL:
     def __init__(self, url):
-        self.scheme, url = url.split("://", 1)
-        assert self.scheme in ("http", "https", "file")
+        # data 스킴은 : 뒤에 //가 없음
+        if url.startswith("data:"):
+            self.scheme = "data"
+            self.data = url[5:]  # "data:" 이후의 내용
+        else:
+            self.scheme, url = url.split("://", 1)
+            assert self.scheme in ("http", "https", "file", "data")
 
         if self.scheme == "file":
             # file:// 스킴의 경우 경로만 저장
             self.path = url
+        elif self.scheme == "data":
+            # data 스킴은 이미 처리됨
+            pass
         else:
             # http/https 스킴 처리
             if self.scheme == "http":
@@ -32,7 +41,19 @@ class URL:
                 self.port = int(port)
 
     def request(self):
-        if self.scheme == "file":
+        if self.scheme == "data":
+            # data URL 처리
+            # 형식: data:[<mediatype>][;base64],<data>
+            # 참고: https://datatracker.ietf.org/doc/html/rfc2397#section-2
+            if "," in self.data:
+                header, content = self.data.split(",", 1)
+                # URL 디코딩
+                content = urllib.parse.unquote(content)
+                return content
+            else:
+                # 콤마가 없으면 전체를 컨텐츠로 간주
+                return urllib.parse.unquote(self.data)
+        elif self.scheme == "file":
             # 로컬 파일 읽기
             try:
                 with open(self.path, encoding="utf-8") as f:
